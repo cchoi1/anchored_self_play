@@ -1,0 +1,50 @@
+# API keys / credentials (see README: config/{claude,openai,gemini}_api_key.txt)
+config/
+*.key
+.env
+
+# Eval outputs / logs
+logs/
+*_eval.json
+*_coder.json
+*_solver_attacker_*.json
+*_differ_*.json
+*_testcases_*.json
+
+# Ray / WandB
+/tmp/ray/
+wandb/
+.wandb/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Virtual environments
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+
+# Model weights / caches
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.ckpt
+.cache/
