@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Credentials / secrets
+config/
+*.key
+.env
+
+# Logs / run outputs / checkpoints
+logs/
+runs/
+wandb/
+.wandb/
+/tmp/ray/
+*.log
+checkpoints/
+global_step_*/
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.ckpt
+
+# Caches
+.cache/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
