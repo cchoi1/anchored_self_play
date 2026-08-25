@@ -40,13 +40,13 @@ def load_data(
         tasks = dataset.get_data()
         return tasks
     
-    elif dataset_name.lower() == "bugbench":
-        dataset = DatasetRegistry.load_dataset("bugbench", split)
+    elif dataset_name.lower() == "bugs_human_authored":
+        dataset = DatasetRegistry.load_dataset("bugs_human_authored", split)
         tasks = dataset.get_data()
         return tasks
 
-    elif dataset_name.lower() == "bugbench_human":
-        dataset = DatasetRegistry.load_dataset("bugbench_human", split)
+    elif dataset_name.lower() == "bugs_human_edited_lm":
+        dataset = DatasetRegistry.load_dataset("bugs_human_edited_lm", split)
         tasks = dataset.get_data()
         return tasks
     
@@ -55,18 +55,18 @@ def load_data(
         tasks = dataset.get_data()
         return tasks
 
-    elif dataset_name.lower() == "bugbench_gpt-oss-20b_sampled":
-        dataset = DatasetRegistry.load_dataset("bugbench_gpt-oss-20b_sampled", split)
+    elif dataset_name.lower() == "bugs_lm_gpt_oss_20b":
+        dataset = DatasetRegistry.load_dataset("bugs_lm_gpt_oss_20b", split)
         tasks = dataset.get_data()
         return tasks
 
-    elif dataset_name.lower() == "bugbench_gpt-oss-120b_sampled":
-        dataset = DatasetRegistry.load_dataset("bugbench_gpt-oss-120b_sampled", split)
+    elif dataset_name.lower() == "bugs_lm_gpt_oss_120b":
+        dataset = DatasetRegistry.load_dataset("bugs_lm_gpt_oss_120b", split)
         tasks = dataset.get_data()
         return tasks
     
-    elif dataset_name.lower() == "bugbench_qwen7b_sampled":
-        dataset = DatasetRegistry.load_dataset("bugbench_qwen7b_sampled", split)
+    elif dataset_name.lower() == "bugs_lm_qwen7b":
+        dataset = DatasetRegistry.load_dataset("bugs_lm_qwen7b", split)
         tasks = dataset.get_data()
         return tasks
     
@@ -93,7 +93,7 @@ def register_deepcoder_chunked_dataset(return_test: bool = False):
         train_dataset = DatasetRegistry.load_dataset("deepcoder_bugs", "train")
     except Exception as e:
         print(f"Failed to load dataset deepcoder_bugs/train: {e}")
-        print("Available datasets:", DatasetRegistry.list_datasets())
+        print("Available datasets:", DatasetRegistry.get_dataset_names())
         return None if not return_test else (None, None)
 
     if not return_test:
@@ -213,8 +213,8 @@ def parse_val_dataset_specs(workflow_args_cfg) -> dict[str, tuple[str, str]]:
     Shared helper for training scripts to parse multi-val specs from `workflow_args.val_datasets`.
 
     Supported formats:
-      - workflow_args.val_datasets = ["bugbench:test", "alias=bigcodebench:test", "deepcoder_bugs:test"]
-      - workflow_args.val_datasets = {"bugbench": "test", "bcb": "bigcodebench:test"}
+      - workflow_args.val_datasets = ["bugs_human_authored:test", "alias=bigcodebench:test", "deepcoder_bugs:test"]
+      - workflow_args.val_datasets = {"bugs_human_authored": "test", "bcb": "bigcodebench:test"}
 
     Returns:
       dict[alias -> (dataset_name, split)]

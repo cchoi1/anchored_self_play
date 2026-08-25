@@ -57,7 +57,7 @@ fi
 # with the released BugSourceBench splits.
 # -----------------------------
 DATASET_NAME="${DATASET_NAME:-bigcodebench}"
-TARGET_DATASET_NAME="${TARGET_DATASET_NAME:-bugbench_human}"
+TARGET_DATASET_NAME="${TARGET_DATASET_NAME:-bugs_human_edited_lm}"
 TARGET_DATASET_SPLIT="${TARGET_DATASET_SPLIT:-train}"
 
 # -----------------------------
@@ -149,7 +149,7 @@ python3 -m examples.asp.train_generator_fixer_flow \
     +rllm.workflow.workflow_args.freeze_generator=$FREEZE_GENERATOR \
     +rllm.workflow.workflow_args.freeze_fixer=$FREEZE_FIXER \
     ++rllm.workflow.workflow_args.use_role_advnorm=$USE_ROLE_ADVNORM \
-    +rllm.workflow.workflow_args.val_datasets='[bugbench_human:test,bugbench:test,bugbench_qwen7b_sampled:test]' \
+    +rllm.workflow.workflow_args.val_datasets='[bugs_human_edited_lm:test,bugs_human_authored:test,bugs_lm_qwen7b:test]' \
     "${EXTRA_ARGS[@]}" \
     algorithm.adv_estimator=grpo \
     algorithm.kl_ctrl.kl_coef=0.001 \
@@ -189,7 +189,7 @@ python3 -m examples.asp.train_generator_fixer_flow \
     actor_rollout_ref.actor.entropy_coeff=0 \
     rllm.mask_truncated_samples=False \
     trainer.critic_warmup=0 \
-    trainer.logger=$LOGGER \
+    trainer.logger="$LOGGER" \
     trainer.project_name="${WANDB_PROJECT:-anchored-self-play}" \
     trainer.experiment_name=$RUN_NAME \
     trainer.val_before_train=False \

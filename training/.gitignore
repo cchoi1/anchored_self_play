@@ -245,3 +245,22 @@ rllm/data/
 core
 core.*
 *.whl
+
+# rllm/data is a source package -- DatasetRegistry lives in rllm/data/dataset.py.
+# The broad `data/` rules above match it and would drop it from the repo entirely.
+!rllm/data/
+!rllm/data/**/
+!rllm/data/**/*.py
+!rllm/data/**/*.ipynb
+# Registered/downloaded datasets still stay out.
+rllm/data/datasets/
+
+# rllm/trainer/config holds the Hydra configs the trainers load via
+# `config_path="pkg://rllm.trainer.config"`.
+!rllm/trainer/config/
+!rllm/trainer/config/*.py
+!rllm/trainer/config/*.yaml
+
+# Re-assert after the negations above (last matching rule wins).
+__pycache__/
+*.py[cod]

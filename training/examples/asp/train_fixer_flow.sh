@@ -69,7 +69,7 @@ python3 -m examples.asp.train_fixer_flow \
     +rllm.workflow.workflow_args.reward_pm1=$REWARD_PM1 \
     +rllm.workflow.workflow_args.include_failed_test_output=$INCLUDE_FAILED_TEST_OUTPUT \
     +rllm.workflow.workflow_args.max_failed_test_output_chars=$MAX_FAILED_TEST_OUTPUT_CHARS \
-    +rllm.workflow.workflow_args.val_datasets='[bugbench_human:test,bugbench_qwen7b_sampled:test,bugbench_gpt-oss-20b_sampled:test]' \
+    +rllm.workflow.workflow_args.val_datasets='[bugs_human_edited_lm:test,bugs_lm_qwen7b:test,bugs_lm_gpt_oss_20b:test]' \
     algorithm.adv_estimator=grpo \
     algorithm.kl_ctrl.kl_coef=0.001 \
     data.train_batch_size=64 \
@@ -108,7 +108,7 @@ python3 -m examples.asp.train_fixer_flow \
     actor_rollout_ref.actor.entropy_coeff=0 \
     rllm.mask_truncated_samples=False \
     trainer.critic_warmup=0 \
-    trainer.logger=$LOGGER \
+    trainer.logger="$LOGGER" \
     trainer.project_name="${WANDB_PROJECT:-anchored-self-play}" \
     trainer.experiment_name=$RUN_NAME \
     trainer.val_before_train=False \

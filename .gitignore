@@ -18,6 +18,8 @@ env/
 
 # Credentials / secrets
 config/
+# ...but rllm/trainer/config/ is the Hydra config package the trainers load.
+!training/rllm/trainer/config/
 *.key
 .env
 

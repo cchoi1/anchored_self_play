@@ -354,9 +354,9 @@ if __name__ == "__main__":
     # Code embedding reference dataset for similarity comparison
     parser.add_argument("--reference_bug_datasets", type=str, default=None,
                         help="Comma-separated list of datasets in format 'dataset:split' to load reference bugs from "
-                             "(e.g., 'bugbench_human:train,bugbench_qwen7b_sampled:train'). Takes precedence over --reference_bug_dataset.")
-    parser.add_argument("--reference_bug_dataset", type=str, default="bugbench",
-                        help="[DEPRECATED: use --reference_bug_datasets] Single dataset to load reference bugs from (default: bugbench)")
+                             "(e.g., 'bugs_human_edited_lm:train,bugs_lm_qwen7b:train'). Takes precedence over --reference_bug_dataset.")
+    parser.add_argument("--reference_bug_dataset", type=str, default="bugs_human_authored",
+                        help="[DEPRECATED: use --reference_bug_datasets] Single dataset to load reference bugs from (default: bugs_human_authored)")
     parser.add_argument("--reference_bug_split", type=str, default="train",
                         help="[DEPRECATED: use --reference_bug_datasets] Split of reference bug dataset (default: train)")
     
@@ -379,7 +379,7 @@ if __name__ == "__main__":
                         help="Path prefix to load pre-computed negative embedding pool (expects {path}_embeddings.npy and {path}_metadata.json)")
     parser.add_argument("--negative_bug_datasets", type=str, default=None,
                         help="Comma-separated list of datasets in format 'dataset:split' to build negative pool from "
-                             "(e.g., 'bugbench_llama:train,bugbench_gpt4:train'). Used when --code_embedding_negative_pool_path is not provided.")
+                             "(e.g., 'bugs_human_authored_llama:train,bugs_human_authored_gpt4:train'). Used when --code_embedding_negative_pool_path is not provided.")
     parser.add_argument("--save_code_embedding_target_pool", type=str, default=None,
                         help="Path prefix to save target embedding pool (creates {path}_embeddings.npy and {path}_metadata.json)")
     parser.add_argument("--save_code_embedding_negative_pool", type=str, default=None,
@@ -394,17 +394,17 @@ if __name__ == "__main__":
     
     # Generator example bugs (few-shot prompting)
     parser.add_argument("--generator_example_bugs_dataset", type=str, default=None,
-                        help="Dataset to load example bugs from for generator few-shot prompting (e.g., 'bugbench_human')")
+                        help="Dataset to load example bugs from for generator few-shot prompting (e.g., 'bugs_human_edited_lm')")
     parser.add_argument("--generator_example_bugs_split", type=str, default="train",
                         help="Split of example bugs dataset (default: train)")
     parser.add_argument("--generator_n_example_bugs", type=int, default=3,
                         help="Number of example bugs to include in generator prompt (default: 3)")
     parser.add_argument("--val_datasets", nargs="+", default=None,
-                        help="Multiple validation datasets in format 'alias=dataset:split' or 'dataset:split' (e.g., 'bugbench:test' 'bcb=bigcodebench:test')")
+                        help="Multiple validation datasets in format 'alias=dataset:split' or 'dataset:split' (e.g., 'bugs_human_authored:test' 'bcb=bigcodebench:test')")
     parser.add_argument("--save_results", action="store_true", help="Save results to JSON file")
     parser.add_argument("--output_dir", type=str, default="logs", help="Directory to save results (default: logs)")
     parser.add_argument("--print_samples", type=int, default=3, help="Number of sample episodes to print in detail (default: 3)")
-    parser.add_argument("--dataset", type=str, default="deepcoder", help="Dataset: deepcoder, bigcodebench, kodcode, bugbench, bugbench_human, bugbench_adversarial, or custom (default: deepcoder)")
+    parser.add_argument("--dataset", type=str, default="deepcoder", help="Dataset: deepcoder, bigcodebench, kodcode, bugs_human_authored, bugs_human_edited_lm, bugbench_adversarial, or custom (default: deepcoder)")
     parser.add_argument(
         "--generate_bugs_in_validation",
         action="store_true",

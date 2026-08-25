@@ -55,7 +55,7 @@ def main(config):
         val_dataset = None
         print(f"Using multiple val datasets: {list(val_datasets.keys())}")
     else:
-        val_dataset = DatasetRegistry.load_dataset("bugbench", "test")
+        val_dataset = DatasetRegistry.load_dataset("bugs_human_authored", "test")
         val_datasets = None
 
     # -----------------------------

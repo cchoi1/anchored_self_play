@@ -1,8 +1,13 @@
 #!/bin/bash
-# Example commands for running generator_fixer_flow evaluation
+# Example commands for running generator_fixer_flow evaluation.
+#
+# These are independent examples, not a single pipeline -- run the one you
+# want rather than executing the whole file. Each expects an OpenAI-compatible
+# server for --base_url, and datasets registered via:
+#     python -m examples.asp.prepare_data
 
 python examples/asp/run_generator_fixer_flow.py \
-    --val_datasets bugbench:test bugbench_human:test bugbench_qwen7b_sampled:test bugbench_gpt-oss-20b_sampled:test bugbench_adversarial:test \
+    --val_datasets bugs_human_authored:test bugs_human_edited_lm:test bugs_lm_qwen7b:test bugs_lm_gpt_oss_20b:test bugbench_adversarial:test \
     --model Qwen/Qwen2.5-Coder-7B-Instruct \
     --base_url http://localhost:30000/v1 \
     --n_parallel 128 \
@@ -14,7 +19,7 @@ python examples/asp/run_generator_fixer_flow.py \
     --output_dir logs
 
 python examples/asp/run_generator_fixer_flow.py \
-    --val_datasets bugbench_qwen7b_sampled:test \
+    --val_datasets bugs_lm_qwen7b:test \
     --model Qwen/Qwen2.5-Coder-7B-Instruct \
     --base_url http://localhost:30000/v1 \
     --n_parallel 64 \
@@ -23,7 +28,7 @@ python examples/asp/run_generator_fixer_flow.py \
     --fixer_attempts_val 1
 
 python examples/asp/run_generator_fixer_flow.py \
-    --val_datasets bugbench_qwen7b_sampled:test \
+    --val_datasets bugs_lm_qwen7b:test \
     --model Qwen/Qwen2.5-Coder-7B-Instruct \
     --base_url http://localhost:30000/v1 \
     --n_parallel 64 \
@@ -34,18 +39,19 @@ python examples/asp/run_generator_fixer_flow.py \
     --save_results \
     --output_dir logs
 
-# With LLM-as-judge bug similarity
+# Embedding-similarity ("anchoring") reward reported alongside the fix rate.
+# Build the reference pool once, then reuse it across runs.
 python examples/asp/run_generator_fixer_flow.py \
-    --dataset bugbench \
+    --dataset bugs_human_authored \
     --split test \
     --model Qwen/Qwen2.5-Coder-7B-Instruct \
     --base_url http://localhost:30000/v1 \
     --n_parallel 32 \
-    --use_bug_similarity_judge \
-    --bug_similarity_reward_weight 0.5 \
-    --bug_similarity_n_targets 3 \
-    --reference_bug_dataset bugbench \
-    --reference_bug_split test \
+    --use_code_embedding_similarity \
+    --code_embedding_reward_weight 0.2 \
+    --code_embedding_model_name voyage-code-3 \
+    --reference_bug_dataset bugs_human_edited_lm \
+    --reference_bug_split train \
     --evaluate_codegen \
     --include_failed_test_output \
     --fixer_attempts_val 1 \

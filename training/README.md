@@ -27,26 +27,63 @@ cd anchored_self_play/training
 
 conda create -n asp python=3.10 -y && conda activate asp
 
-# Install verl (inference frameworks, flash-attn, etc.)
+# 1. Install verl (inference frameworks, flash-attn, etc.). Run this FIRST -- it
+#    pins torch 2.6.0 / numpy<2 to match the vLLM and flash-attn wheels.
 bash scripts/install_verl.sh
 
-# Install this package
+# 2. Install this package
 pip install -e .
+
+# 3. Install the libraries the unit tests import (see note below)
+pip install -r requirements-bigcodebench.txt
 ```
 
 A CUDA GPU environment is required for training.
 
+**Why step 3 matters.** The reward function runs each task's real unit tests, and
+BigCodeBench tests import `matplotlib`, `sklearn`, `seaborn`, `scipy` and friends.
+If those are missing the tests fail on import, so correct programs score as
+failures and the training signal is silently wrong rather than loudly broken.
+
+The embedding-similarity reward calls Voyage AI, so `VOYAGE_API_KEY` must be set
+for anchored self-play (the default). Set `USE_CODE_EMBED_SIM=false` in the
+launcher to train without it.
+
 ## Data
 
-Training draws base code-generation tasks (e.g. BigCodeBench) and a small
-**reference bug set** from [BugSourceBench](../bugsourcebench.csv). Register
-datasets as parquet with the `DatasetRegistry`; dataset-prep helpers are in
-`rllm/data`. Set `RLLM_DATASET_DIR` to control where registered parquet files live
-(defaults to `rllm/data/datasets`).
+The launchers load data through `DatasetRegistry`, which reads parquet from
+`RLLM_DATASET_DIR` (default `rllm/data/datasets`). Populate it once:
 
-The training/eval scripts refer to these splits: `bigcodebench` (base tasks),
-`bugbench_human`, `bugbench_qwen7b_sampled`, `bugbench_gpt-oss-20b_sampled`, and
-`bugbench` — the BugSourceBench bug sources.
+```bash
+python -m examples.asp.prepare_data
+```
+
+That downloads the released BugSourceBench splits from HuggingFace and registers
+the names the training and eval scripts reference:
+
+| Registered name | train / test | Bug source | HuggingFace repo | CSV column |
+|---|---|---|---|---|
+| `bigcodebench` | 899 / 228 | *(no bug — base tasks)* | *(derived)* | — |
+| `bugs_human_authored` | 894 / 227 | Human-authored | `cchoi1/bugbench` | `buggy_Human` |
+| `bugs_human_edited_lm` | 765 / 195 | Human edits of buggy LM code | `cchoi1/bugbench_human` | `buggy_Human-Edited_LM` |
+| `bugs_lm_qwen7b` | 712 / 195 | Errors from a weaker code LM | `cchoi1/bugbench_qwen7b_sampled` | `buggy_LM_Errors_Qwen-7B` |
+| `bugs_lm_gpt_oss_20b` | 617 / 172 | Errors from a stronger code LM | `cchoi1/bugbench_gpt-oss-20b_sampled` | `buggy_LM_Errors_gpt-oss-20b` |
+| `bugbench_adversarial` | 637 / 174 | Generator optimized against another model | `cchoi1/bugbench_adversarial` | *(not in the CSV)* |
+
+The registry names describe the bug source; the HuggingFace repo names are the
+published ones and do not line up with them (`cchoi1/bugbench` is the
+human-authored set, `cchoi1/bugbench_human` is the human-edited-LM set). The
+mapping lives in `BUG_SOURCES` in [`prepare_data.py`](examples/asp/prepare_data.py)
+and was verified by matching bug text against `bugsourcebench.csv`, 127/127 exact
+on every test row.
+
+`bigcodebench` holds the *base* tasks (problem, reference solution, unit tests --
+no bug). It is derived from the bug splits above: rows are pooled, deduplicated
+by BigCodeBench task id, and stripped of `buggy_solution`. That keeps prompt
+formatting identical to the bug splits and inherits the same train/test
+partition, so no held-out benchmark task leaks into training.
+
+Pass `--datasets` / `--splits` to register a subset, and `--force` to re-download.
 
 ## Training
 
@@ -79,6 +116,9 @@ bash examples/asp/run_generator_fixer_flow.sh   # fix-rate across bug sources
 bash examples/asp/run_fixer_flow.sh             # fixer-only evaluation
 ```
 
+Both files hold several independent example invocations rather than one pipeline —
+copy the one you want instead of executing the whole file.
+
 For evaluating **API models** on BugSourceBench, see [`../api_eval`](../api_eval).
 
 ## Layout
@@ -95,9 +135,11 @@ training/
 │       ├── fixer_flow.py / generator_flow.py / frozen_generator_fixer_flow.py
 │       ├── components.py, utils.py
 │       ├── prompts.py, code_embedding.py, data_utils.py   # prompts, embedding reward, data
+│       ├── prepare_data.py             # registers the datasets (run this first)
 │       ├── train_*.py / run_*.py       # trainers + eval runners
 │       └── train_*.sh / run_*.sh       # launchers
 ├── scripts/install_verl.sh
+├── requirements-bigcodebench.txt   # libraries the unit tests import
 ├── verl/                       # submodule: volcengine/verl
 └── pyproject.toml
 ```

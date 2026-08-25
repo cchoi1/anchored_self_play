@@ -59,6 +59,9 @@ class CodeEmbeddingConfig:
     voyage_api_key: Optional[str] = None
     # Default used only if caller doesn't specify; for retrieval, we pass explicitly.
     input_type: str = "document"
+    # Transient API failures are retried with exponential backoff, then raised.
+    max_retries: int = 4
+    retry_backoff_s: float = 2.0
 
 
 def is_voyage_model(model_name: str) -> bool:
@@ -185,18 +188,36 @@ class VoyageCodeEmbedder:
             if self.config.max_chars:
                 batch = [t[: self.config.max_chars] for t in batch]
 
-            try:
-                result = self._client.embed(
-                    texts=batch,
-                    model=self.config.model_name,
-                    input_type=input_type,
-                )
-                batch_embeddings = np.array(result.embeddings)
-                embeddings.append(batch_embeddings)
-            except Exception as e:
-                print(f"Voyage API error: {e}")
-                dim = 1024 if "code-3" in self.config.model_name else 1536
-                embeddings.append(np.zeros((len(batch), dim), dtype=np.float32))
+            # Retry transient failures, then give up loudly. Substituting zero
+            # vectors here would silently flatten the anchoring reward to a
+            # constant instead of failing, which is far harder to notice.
+            last_err: Optional[Exception] = None
+            for attempt in range(self.config.max_retries):
+                try:
+                    result = self._client.embed(
+                        texts=batch,
+                        model=self.config.model_name,
+                        input_type=input_type,
+                    )
+                    embeddings.append(np.array(result.embeddings))
+                    last_err = None
+                    break
+                except Exception as e:  # noqa: BLE001 - re-raised below
+                    last_err = e
+                    backoff = self.config.retry_backoff_s * (2**attempt)
+                    print(
+                        f"Voyage API error (attempt {attempt + 1}/{self.config.max_retries}): {e}"
+                        + (f" -- retrying in {backoff:.1f}s" if attempt + 1 < self.config.max_retries else "")
+                    )
+                    if attempt + 1 < self.config.max_retries:
+                        time.sleep(backoff)
+            if last_err is not None:
+                raise RuntimeError(
+                    f"Voyage embedding failed after {self.config.max_retries} attempts on a batch of "
+                    f"{len(batch)} texts (model={self.config.model_name}). The embedding-similarity "
+                    f"reward cannot be computed; set use_code_embedding_similarity=false to train "
+                    f"without it."
+                ) from last_err
 
             if i + self.config.batch_size < len(texts):
                 time.sleep(0.1)
@@ -646,10 +667,10 @@ if __name__ == "__main__":
                         help="Voyage AI API key (defaults to VOYAGE_API_KEY env var)")
 
     parser.add_argument("--datasets", type=str, nargs="+",
-                        default=["bugbench", "bugbench_qwen7b_sampled", "bugbench_gpt-oss-20b_sampled"],
+                        default=["bugs_human_authored", "bugs_lm_qwen7b", "bugs_lm_gpt_oss_20b"],
                         help="Datasets to compare")
 
-    parser.add_argument("--reference_dataset", type=str, default="bugbench",
+    parser.add_argument("--reference_dataset", type=str, default="bugs_human_authored",
                         help="Dataset to use for building TARGET pool")
 
     parser.add_argument("--negative_datasets", type=str, nargs="*", default=None,

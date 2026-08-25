@@ -515,10 +515,10 @@ if __name__ == "__main__":
     targets = [
         ("deepcoder_bugs", "test", 3),
         ("bigcodebench", "test", 3),
-        ("bugbench", "test", 3),
+        ("bugs_human_authored", "test", 3),
         ("lcb_bugbench", "test", 3),
-        ("bugbench_gpt_oss_20b_sampled", "test", 3),
-        ("bugbench_qwen7b_sampled", "test", 3),
+        ("bugs_lm_gpt_oss_20b", "test", 3),
+        ("bugs_lm_qwen7b", "test", 3),
     ]
 
     # Some environments may not have the optional dependencies used by BigCodeBench's sandbox.
@@ -531,7 +531,7 @@ if __name__ == "__main__":
         _HAS_MPL = False
 
     for ds_name, split, n in targets:
-        if ds_name in ("bigcodebench", "bugbench", "bugbench_gpt_oss_20b_sampled", "bugbench_qwen7b_sampled") and not _HAS_MPL:
+        if ds_name in ("bigcodebench", "bugs_human_authored", "bugs_lm_gpt_oss_20b", "bugs_lm_qwen7b") and not _HAS_MPL:
             print("\n" + "=" * 80)
             print(f"Dataset: {ds_name}  split: {split}  n={n}")
             print("=" * 80)

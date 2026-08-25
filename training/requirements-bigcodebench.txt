@@ -1,0 +1,81 @@
+# Runtime libraries the BigCodeBench / BugSourceBench unit tests import.
+#
+# The reward function executes each task's real unit tests. If a test's imports
+# are missing the task fails regardless of whether the code is correct, which
+# silently corrupts the training signal (every generated bug looks "valid" and
+# every repair looks wrong). Install these into the training environment:
+#
+#     pip install -r requirements-bigcodebench.txt
+#
+# Derived from the libraries used by the registered tasks, and kept unpinned so
+# it does not override the torch / numpy / pandas versions that
+# scripts/install_verl.sh pins for vLLM and flash-attn.
+
+matplotlib
+scikit-learn
+seaborn
+statsmodels
+scikit-image
+sympy
+
+requests
+beautifulsoup4
+lxml
+mechanize
+wikipedia
+python-dateutil
+pytz
+holidays
+
+opencv-python-headless
+Pillow
+wordcloud
+pytesseract
+
+nltk
+textblob
+regex
+wordninja
+Levenshtein
+natsort
+chardet
+prettytable
+texttable
+xmltodict
+PyYAML
+
+Django
+flask
+flask_login
+flask_mail
+flask_restful
+flask_wtf
+WTForms
+Werkzeug
+
+openpyxl
+xlwt
+python-docx
+
+geopy
+geopandas
+shapely
+folium
+
+librosa
+soundfile
+
+cryptography
+pycryptodome
+rsa
+blake3
+
+Faker
+psutil
+sendgrid
+python_http_client
+
+# Needed by 4 of the 1127 registered tasks. Uncomment for full coverage; these
+# are large downloads and can conflict with the training stack.
+# tensorflow
+# keras

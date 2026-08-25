@@ -486,7 +486,9 @@ class RewardCodeFn:
             is_correct, test_details = kodcode_check_correctness(tests, model_code)
         elif dataset_name == "humanevalplus":
             is_correct, test_details = humanevalplus_check_correctness(tests, model_code)
-        elif dataset_name == "bigcodebench" or "bugbench" in dataset_name:
+        # BigCodeBench-style execution: base tasks, the renamed bug sources
+        # (bugs_*), and the legacy bugbench_* names kept for older datasets.
+        elif dataset_name == "bigcodebench" or "bugbench" in dataset_name or dataset_name.startswith("bugs_"):
             entry_point = task_info.get("entry_point", None)
             is_correct, test_details = bigcodebench_check_correctness(tests, model_code, entry_point)
         else:

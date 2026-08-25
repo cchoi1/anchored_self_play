@@ -39,7 +39,7 @@ def main(config):
 
     # -----------------------------
     # Datasets
-    # Options: bigcodebench, kodcode, deepcoder, bugbench, bugbench_human, bugbench_adversarial
+    # Options: bigcodebench, kodcode, deepcoder, bugs_human_authored, bugs_human_edited_lm, bugbench_adversarial
     # -----------------------------
     dataset_name = getattr(workflow_args_cfg, "dataset_name", "bigcodebench") if workflow_args_cfg else "bigcodebench"
     train_split = getattr(workflow_args_cfg, "train_split", "train") if workflow_args_cfg else "train"
@@ -57,7 +57,7 @@ def main(config):
         val_dataset = None
         print(f"Using multiple val datasets: {list(val_datasets.keys())}")
     else:
-        val_dataset = DatasetRegistry.load_dataset("bugbench_human", "test")
+        val_dataset = DatasetRegistry.load_dataset("bugs_human_edited_lm", "test")
         val_datasets = None
 
     # -----------------------------

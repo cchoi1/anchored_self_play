@@ -98,7 +98,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_tasks", type=int, default=-1, help="Number of tasks to process (default: -1 = all)")
     parser.add_argument("--n_repeats", type=int, default=1, help="Number of times to repeat each task (default: 1)")
     parser.add_argument("--split", type=str, default="test", help="Dataset split to use (default: test)")
-    parser.add_argument("--dataset", type=str, default="bigcodebench", help="Dataset: deepcoder, bigcodebench, bugbench, etc.")
+    parser.add_argument("--dataset", type=str, default="bigcodebench", help="Dataset: deepcoder, bigcodebench, bugs_human_authored, etc.")
 
     # Fixer (trainable model, but here just for evaluation)
     parser.add_argument("--model", type=str, default="Qwen/Qwen2.5-Coder-7B-Instruct", help="Fixer model name")
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     parser.add_argument("--eval_pregenerated_only", action="store_true",
                         help="Only evaluate on tasks with pregenerated bugs (skip tasks without bugs)")
     parser.add_argument("--val_datasets", nargs="+", default=None,
-                        help="Multiple validation datasets in format 'alias=dataset:split' or 'dataset:split' (e.g., 'bugbench:test' 'bcb=bigcodebench:test')")
+                        help="Multiple validation datasets in format 'alias=dataset:split' or 'dataset:split' (e.g., 'bugs_human_authored:test' 'bcb=bigcodebench:test')")
     parser.add_argument("--n_parallel", type=int, default=32, help="Number of parallel tasks")
     parser.add_argument("--save_results", action="store_true", help="Save results to JSON")
     parser.add_argument("--output_dir", type=str, default="logs", help="Directory to save results")

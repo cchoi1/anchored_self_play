@@ -124,6 +124,11 @@ def _get_data_source(task: Dict[str, Any]) -> str:
     )
     metadata = task.get("metadata") or (extra_info.get("metadata") if isinstance(extra_info, dict) else None) or {}
     if has_entry_point or (has_bugbench_prompts and has_string_test) or (isinstance(metadata, dict) and metadata.get("func_name")):
+        # Routing sentinel, not a dataset name: this is only reached for tasks
+        # that carry no `data_source` at all, where the source is unknown. It
+        # routes to the BigCodeBench test runner in rllm/rewards/code_reward.py.
+        # Datasets registered by prepare_data.py always carry their own
+        # data_source (bugs_human_authored, bugs_lm_qwen7b, ...) and never land here.
         return "bugbench"
 
     return "livecodebench"

@@ -74,7 +74,7 @@ def main(config):
 
     # -----------------------------
     # Datasets
-    # Options: bigcodebench, kodcode, deepcoder, bugbench, bugbench_human, bugbench_adversarial
+    # Options: bigcodebench, kodcode, deepcoder, bugs_human_authored, bugs_human_edited_lm, bugbench_adversarial
     # train_split: "train" or "train_large" (train_large excludes fewer test examples)
     # -----------------------------
     dataset_name = getattr(workflow_args_cfg, "dataset_name", "bigcodebench") if workflow_args_cfg else "bigcodebench"
@@ -93,7 +93,7 @@ def main(config):
         val_dataset = None
         print(f"Using multiple val datasets: {list(val_datasets.keys())}")
     else:
-        val_dataset = DatasetRegistry.load_dataset("bugbench_human", "test")
+        val_dataset = DatasetRegistry.load_dataset("bugs_human_edited_lm", "test")
         val_datasets = None
 
     if train_dataset is None:
@@ -379,6 +379,65 @@ def main(config):
                 if code_embedding_negative_bugs:
                     print(f"  [CodeEmbed] Total negative pool reference bugs: {len(code_embedding_negative_bugs)}")
 
+    # -----------------------------
+    # Pre-build the embedding pools ONCE.
+    #
+    # AgentWorkflowEngine constructs `n_parallel_tasks` workflow instances, and
+    # GeneratorFixerWorkflow.__init__ embeds the whole reference set when it is
+    # handed raw `code_embedding_reference_bugs`. Building here and passing the
+    # finished pool objects keeps that to a single pass over the Voyage API
+    # instead of one per worker. Mirrors run_generator_fixer_flow.py.
+    # -----------------------------
+    prebuilt_target_pool = None
+    prebuilt_negative_pool = None
+    if use_code_embedding_similarity:
+        try:
+            from examples.asp.code_embedding import (
+                CodeEmbedder,
+                CodeEmbeddingConfig,
+                KNNBugSimilarity,
+                ReferencePool,
+            )
+
+            emb_cfg = CodeEmbeddingConfig(
+                enabled=True,
+                model_name=code_embedding_model_name,
+                embed_mode=code_embedding_embed_mode,
+                include_problem=code_embedding_include_problem,
+                top_k=code_embedding_top_k,
+            )
+
+            if code_embedding_target_pool_path:
+                prebuilt_target_pool = ReferencePool.load(code_embedding_target_pool_path)
+                print(f"  [CodeEmbed] Loaded TARGET pool from {code_embedding_target_pool_path} ({len(prebuilt_target_pool)} embeddings)")
+            elif code_embedding_reference_bugs:
+                print(f"  [CodeEmbed] Building TARGET pool from {len(code_embedding_reference_bugs)} bugs (once for all workers)...")
+                knn = KNNBugSimilarity(CodeEmbedder(emb_cfg), top_k=code_embedding_top_k)
+                knn.build_target_pool(code_embedding_reference_bugs)
+                prebuilt_target_pool = knn.target_pool
+                print(f"  [CodeEmbed] Built TARGET pool with {len(prebuilt_target_pool)} embeddings")
+
+            if code_embedding_negative_pool_path:
+                prebuilt_negative_pool = ReferencePool.load(code_embedding_negative_pool_path)
+                print(f"  [CodeEmbed] Loaded NEGATIVE pool from {code_embedding_negative_pool_path} ({len(prebuilt_negative_pool)} embeddings)")
+            elif code_embedding_negative_bugs:
+                print(f"  [CodeEmbed] Building NEGATIVE pool from {len(code_embedding_negative_bugs)} bugs (once for all workers)...")
+                knn_neg = KNNBugSimilarity(CodeEmbedder(emb_cfg), top_k=code_embedding_top_k)
+                knn_neg.build_target_pool(code_embedding_negative_bugs)
+                prebuilt_negative_pool = knn_neg.target_pool
+                print(f"  [CodeEmbed] Built NEGATIVE pool with {len(prebuilt_negative_pool)} embeddings")
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to build code-embedding pools: {e}. The anchoring reward cannot "
+                f"be computed without them; set USE_CODE_EMBED_SIM=false to train without it."
+            ) from e
+
+        if prebuilt_target_pool is None or len(prebuilt_target_pool) == 0:
+            raise RuntimeError(
+                "use_code_embedding_similarity=True but the TARGET pool is empty. Check "
+                "target_dataset_name / code_embedding_target_datasets."
+            )
+
     trainer = AgentTrainer(
         workflow_class=GeneratorFixerWorkflow,
         workflow_args={
@@ -416,10 +475,14 @@ def main(config):
             "code_embedding_top_k": code_embedding_top_k,
             "code_embedding_use_margin": code_embedding_use_margin,
             "code_embedding_margin_temperature": code_embedding_margin_temperature,
-            "code_embedding_target_pool_path": code_embedding_target_pool_path,
-            "code_embedding_negative_pool_path": code_embedding_negative_pool_path,
-            "code_embedding_reference_bugs": code_embedding_reference_bugs,
-            "code_embedding_negative_bugs": code_embedding_negative_bugs,
+            # Pass the pre-built pools; None-out the raw inputs so each worker does
+            # not re-embed the reference set in its own __init__.
+            "code_embedding_target_pool": prebuilt_target_pool,
+            "code_embedding_negative_pool": prebuilt_negative_pool,
+            "code_embedding_target_pool_path": None,
+            "code_embedding_negative_pool_path": None,
+            "code_embedding_reference_bugs": None,
+            "code_embedding_negative_bugs": None,
         },
         config=config,
         train_dataset=train_dataset,
