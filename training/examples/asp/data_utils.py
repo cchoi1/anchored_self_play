@@ -85,9 +85,8 @@ def register_deepcoder_chunked_dataset(return_test: bool = False):
     """
     Compatibility wrapper used by training scripts.
 
-    The current bugs workflows use the registered dataset name `deepcoder_bugs`.
-    This function preserves the historical API expected by
-    `examples/bugs/train_generator_flow.py` and `examples/bugs/train_generator_solver_flow.py`.
+    Preserved for backward compatibility with older bug workflows that used the
+    registered dataset name `deepcoder_bugs`. Nothing in examples/asp calls it.
     """
     try:
         train_dataset = DatasetRegistry.load_dataset("deepcoder_bugs", "train")

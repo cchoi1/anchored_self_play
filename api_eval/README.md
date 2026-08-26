@@ -123,3 +123,21 @@ Reproduce the paper's runs across all models; grouped by role:
 The scripts reference the BugSourceBench splits on HuggingFace under
 [`cchoi1`](https://huggingface.co/cchoi1) (e.g. `cchoi1/bugs_human_edited_lm_eval`). The
 raw benchmark also ships as `bugsourcebench.csv` at the repository root.
+
+## Reproduction scripts
+
+`unified_eval/scripts/run_eval_all.sh` runs one model across all four
+BugSourceBench bug sources for a given mode:
+
+```bash
+bash unified_eval/scripts/run_eval_all.sh <mode> <model>
+
+# e.g.
+bash unified_eval/scripts/run_eval_all.sh solver-attacker-style gpt-5.2
+bash unified_eval/scripts/run_eval_all.sh solver-diff claude-sonnet-4-5-20250929
+bash unified_eval/scripts/run_eval_all.sh solver-test-cases o4-mini
+```
+
+It replaces the nine per-model scripts that used to live here, which were
+identical apart from the model id and mode. Output filenames are keyed by the
+bug source (`human_authored`, `human_edited_lm`, `qwen7b`, `gpt_oss_20b`).

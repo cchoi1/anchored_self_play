@@ -32,8 +32,9 @@ bash examples/asp/train_generator_fixer_flow.sh
 #   + embedding reward : USE_CODE_EMBED_SIM=true  USE_PREGEN_BUGS_TRAIN=false
 #   + reference mixing : USE_CODE_EMBED_SIM=false USE_PREGEN_BUGS_TRAIN=true
 
-# Fixer-only baseline (frozen bug generator)
+# Baselines
 SYNTHESIZER_BASE_URL=http://localhost:32000/v1 bash examples/asp/train_fixer_flow.sh
+GENERATOR_BASE_URL=http://localhost:32000/v1 bash examples/asp/train_frozen_generator_fixer_flow.sh
 ```
 
 Evaluate a trained checkpoint served on an OpenAI-compatible endpoint:
@@ -61,7 +62,14 @@ python -m unified_eval.run_eval --input cchoi1/bugs_human_edited_lm_eval \
     --mode solver-attacker-style --model gpt-4o --eval out.json --output out_eval.json
 ```
 
-Per-model reproduction scripts are in [`api_eval/unified_eval/scripts/`](api_eval/unified_eval/scripts).
+To sweep one model across all four bug sources, use
+[`api_eval/unified_eval/scripts/run_eval_all.sh`](api_eval/unified_eval/scripts/run_eval_all.sh):
+
+```bash
+bash run_eval_all.sh solver-attacker-style gpt-5.2   # mode, model
+```
+
+Modes are `solver-attacker-style`, `solver-diff` and `solver-test-cases`.
 See [`api_eval/README.md`](api_eval/README.md) for all modes and arguments.
 
 ## BugSourceBench

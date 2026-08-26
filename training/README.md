@@ -96,10 +96,20 @@ bash examples/asp/train_generator_fixer_flow.sh
 # + embedding reward only: USE_CODE_EMBED_SIM=true,  USE_PREGEN_BUGS_TRAIN=false
 # + reference mixing only:  USE_CODE_EMBED_SIM=false, USE_PREGEN_BUGS_TRAIN=true
 
-# Fixer-only baseline (frozen bug generator):
+# Fixer-only baseline: frozen synthesizer writes code, fixer repairs its failures
 SYNTHESIZER_BASE_URL=http://localhost:32000/v1 \
   bash examples/asp/train_fixer_flow.sh
+
+# Frozen-generator ablation: generator injects bugs but is never trained
+GENERATOR_BASE_URL=http://localhost:32000/v1 \
+  bash examples/asp/train_frozen_generator_fixer_flow.sh
 ```
+
+The two baselines differ in where the buggy code comes from: `train_fixer_flow`
+has a frozen model write code from scratch and trains the fixer on its failures,
+while `train_frozen_generator_fixer_flow` has a frozen generator inject bugs into
+correct code. The latter isolates how much of anchored self-play's gain comes
+from *training* the generator rather than merely having one.
 
 Configure the run with environment variables: `MODEL_PATH`, `NUM_GPUS`, `RUN_DIR`,
 and `WANDB_PROJECT`/`WANDB_NAME` (logging falls back to console if unset). The
@@ -131,7 +141,7 @@ training/
 ├── examples/
 │   └── asp/          # generator–fixer self-play (paper code)
 │       ├── generator_fixer_flow.py     # the self-play workflow
-│       ├── fixer_flow.py / generator_flow.py / frozen_generator_fixer_flow.py
+│       ├── fixer_flow.py / frozen_generator_fixer_flow.py   # baselines
 │       ├── components.py, utils.py
 │       ├── prompts.py, code_embedding.py, data_utils.py   # prompts, embedding reward, data
 │       ├── prepare_data.py             # registers the datasets (run this first)
