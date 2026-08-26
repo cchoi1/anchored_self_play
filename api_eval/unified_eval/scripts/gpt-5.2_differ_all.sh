@@ -10,8 +10,14 @@ MODE="solver-diff"
 WORKERS=2
 WORKERS_EVAL=10
 
-for DS in human qwen adv oss; do
-    INPUT="cchoi1/bugbench_${DS}"
+declare -A DATASETS=(
+    ["human_authored"]="cchoi1/bugs_human_authored_eval"
+    ["human_edited_lm"]="cchoi1/bugs_human_edited_lm_eval"
+    ["qwen"]="cchoi1/bugs_lm_qwen7b_eval"
+    ["oss"]="cchoi1/bugs_lm_gpt_oss_20b_eval"
+)
+for DS in "${!DATASETS[@]}"; do
+    INPUT="${DATASETS[$DS]}"
     OUTPUT="${MODEL}_differ_${DS}.json"
     EVAL_OUTPUT="${MODEL}_differ_${DS}_eval.json"
 

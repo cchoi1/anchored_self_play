@@ -11,10 +11,10 @@ WORKERS=2
 WORKERS_EVAL=10
 
 declare -A DATASETS=(
-    ["human"]="cchoi1/bugbench_human_new"
-    ["qwen"]="cchoi1/bugbench_qwen7b_sampled_new"
+    ["human"]="cchoi1/bugs_human_edited_lm_eval"
+    ["qwen"]="cchoi1/bugs_lm_qwen7b_eval"
     ["adv"]="cchoi1/bugbench_adversarial_new"
-    ["oss"]="cchoi1/bugbench_gpt-oss-20b_sampled_new"
+    ["oss"]="cchoi1/bugs_lm_gpt_oss_20b_eval"
 )
 
 for DS in human qwen adv oss; do

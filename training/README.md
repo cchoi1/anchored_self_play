@@ -64,18 +64,17 @@ the names the training and eval scripts reference:
 | Registered name | train / test | Bug source | HuggingFace repo | CSV column |
 |---|---|---|---|---|
 | `bigcodebench` | 899 / 228 | *(no bug — base tasks)* | *(derived)* | — |
-| `bugs_human_authored` | 894 / 227 | Human-authored | `cchoi1/bugbench` | `buggy_Human` |
-| `bugs_human_edited_lm` | 765 / 195 | Human edits of buggy LM code | `cchoi1/bugbench_human` | `buggy_Human-Edited_LM` |
-| `bugs_lm_qwen7b` | 712 / 195 | Errors from a weaker code LM | `cchoi1/bugbench_qwen7b_sampled` | `buggy_LM_Errors_Qwen-7B` |
-| `bugs_lm_gpt_oss_20b` | 617 / 172 | Errors from a stronger code LM | `cchoi1/bugbench_gpt-oss-20b_sampled` | `buggy_LM_Errors_gpt-oss-20b` |
+| `bugs_human_authored` | 894 / 227 | Human-authored | `cchoi1/bugs_human_authored` | `buggy_Human` |
+| `bugs_human_edited_lm` | 765 / 195 | Human edits of buggy LM code | `cchoi1/bugs_human_edited_lm` | `buggy_Human-Edited_LM` |
+| `bugs_lm_qwen7b` | 712 / 195 | Errors from a weaker code LM | `cchoi1/bugs_lm_qwen7b` | `buggy_LM_Errors_Qwen-7B` |
+| `bugs_lm_gpt_oss_20b` | 617 / 172 | Errors from a stronger code LM | `cchoi1/bugs_lm_gpt_oss_20b` | `buggy_LM_Errors_gpt-oss-20b` |
 | `bugbench_adversarial` | 637 / 174 | Generator optimized against another model | `cchoi1/bugbench_adversarial` | *(not in the CSV)* |
 
-The registry names describe the bug source; the HuggingFace repo names are the
-published ones and do not line up with them (`cchoi1/bugbench` is the
-human-authored set, `cchoi1/bugbench_human` is the human-edited-LM set). The
-mapping lives in `BUG_SOURCES` in [`prepare_data.py`](examples/asp/prepare_data.py)
-and was verified by matching bug text against `bugsourcebench.csv`, 127/127 exact
-on every test row.
+Registry names and HuggingFace repo names now match. Both were verified against
+`bugsourcebench.csv` — 127/127 exact on every test row. The repos were previously
+named `bugbench`, `bugbench_human`, `bugbench_*_sampled`, where the names did not
+describe the contents; those old ids still redirect on the Hub. The mapping lives
+in `BUG_SOURCES` in [`prepare_data.py`](examples/asp/prepare_data.py).
 
 `bigcodebench` holds the *base* tasks (problem, reference solution, unit tests --
 no bug). It is derived from the bug splits above: rows are pooled, deduplicated

@@ -34,16 +34,14 @@ from typing import Any, Dict, Iterable, List
 
 # Bug-source datasets: local registry name -> HuggingFace repo id.
 #
-# The registry names describe the bug source. The HuggingFace repo ids are the
-# published ones and do NOT line up with them -- notably `cchoi1/bugbench` holds
-# the human-authored bugs while `cchoi1/bugbench_human` holds the human-edited-LM
-# bugs. Verified by matching bug text against bugsourcebench.csv (127/127 exact on
-# every test row). Keep this mapping intact if you edit either side.
+# Registry name and repo name now match. The repos were previously called
+# bugbench / bugbench_human / bugbench_*_sampled, where the names did not match
+# the contents; those old ids still redirect here on the Hub.
 BUG_SOURCES: Dict[str, str] = {
-    "bugs_human_authored": "cchoi1/bugbench",
-    "bugs_human_edited_lm": "cchoi1/bugbench_human",
-    "bugs_lm_qwen7b": "cchoi1/bugbench_qwen7b_sampled",
-    "bugs_lm_gpt_oss_20b": "cchoi1/bugbench_gpt-oss-20b_sampled",
+    "bugs_human_authored": "cchoi1/bugs_human_authored",
+    "bugs_human_edited_lm": "cchoi1/bugs_human_edited_lm",
+    "bugs_lm_qwen7b": "cchoi1/bugs_lm_qwen7b",
+    "bugs_lm_gpt_oss_20b": "cchoi1/bugs_lm_gpt_oss_20b",
     # Provenance unconfirmed (generator optimized against another model), so it
     # keeps its published name rather than being given a descriptive one.
     "bugbench_adversarial": "cchoi1/bugbench_adversarial",

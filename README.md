@@ -54,10 +54,10 @@ pip install -r requirements.txt          # or: conda env create -f env.yml
 export OPENAI_API_KEY=...  ANTHROPIC_API_KEY=...  GOOGLE_API_KEY=...
 
 # inference + scoring on a bug-source split
-python -m unified_eval.run_eval --input cchoi1/bugs_human_edited_lm_new \
+python -m unified_eval.run_eval --input cchoi1/bugs_human_edited_lm_eval \
     --mode solver-attacker-style --model gpt-4o --mutation-col buggy_solution \
     --output out.json --inference-only
-python -m unified_eval.run_eval --input cchoi1/bugs_human_edited_lm_new \
+python -m unified_eval.run_eval --input cchoi1/bugs_human_edited_lm_eval \
     --mode solver-attacker-style --model gpt-4o --eval out.json --output out_eval.json
 ```
 
@@ -69,18 +69,19 @@ See [`api_eval/README.md`](api_eval/README.md) for all modes and arguments.
 `bugsourcebench.csv` holds task, spec, and unit tests fixed while varying the bug source
 (one column per source):
 
-| Column | Bug source | HuggingFace repo | Training name |
+| Column | Bug source | Training split | Full eval split |
 |---|---|---|---|
-| `buggy_Human` | human-authored bugs | `cchoi1/bugbench` | `bugs_human_authored` |
-| `buggy_Human-Edited_LM` | human edits of buggy LM code | `cchoi1/bugbench_human` | `bugs_human_edited_lm` |
-| `buggy_LM_Errors_Qwen-7B` | errors from a weaker code LM | `cchoi1/bugbench_qwen7b_sampled` | `bugs_lm_qwen7b` |
-| `buggy_LM_Errors_gpt-oss-20b` | errors from a stronger code LM | `cchoi1/bugbench_gpt-oss-20b_sampled` | `bugs_lm_gpt_oss_20b` |
+| `buggy_Human` | human-authored bugs | `cchoi1/bugs_human_authored` | `cchoi1/bugs_human_authored_eval` |
+| `buggy_Human-Edited_LM` | human edits of buggy LM code | `cchoi1/bugs_human_edited_lm` | `cchoi1/bugs_human_edited_lm_eval` |
+| `buggy_LM_Errors_Qwen-7B` | errors from a weaker code LM | `cchoi1/bugs_lm_qwen7b` | `cchoi1/bugs_lm_qwen7b_eval` |
+| `buggy_LM_Errors_gpt-oss-20b` | errors from a stronger code LM | `cchoi1/bugs_lm_gpt_oss_20b` | `cchoi1/bugs_lm_gpt_oss_20b_eval` |
 
-Plus `canonical_solution`, `test`, prompts, and `entry_point`. Splits are also on
-HuggingFace under [`cchoi1`](https://huggingface.co/cchoi1). The HuggingFace repo
-names predate the descriptive training names and do not line up with them — note
-that `cchoi1/bugbench` is the human-authored set and `cchoi1/bugbench_human` is
-the human-edited-LM set.
+Plus `canonical_solution`, `test`, prompts, and `entry_point`. Splits are on
+HuggingFace under [`cchoi1`](https://huggingface.co/cchoi1). The training splits
+carry the RL train/test partition; the `_eval` splits are the larger 561-task
+sets used by [`api_eval`](api_eval). These repos were previously named
+`bugbench*`, where the names did not describe the contents; the old ids still
+redirect.
 
 ## Citation
 

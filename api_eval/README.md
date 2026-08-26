@@ -121,5 +121,5 @@ Reproduce the paper's runs across all models; grouped by role:
 ## Datasets
 
 The scripts reference the BugSourceBench splits on HuggingFace under
-[`cchoi1`](https://huggingface.co/cchoi1) (e.g. `cchoi1/bugbench_human_new`). The
+[`cchoi1`](https://huggingface.co/cchoi1) (e.g. `cchoi1/bugs_human_edited_lm_eval`). The
 raw benchmark also ships as `bugsourcebench.csv` at the repository root.
