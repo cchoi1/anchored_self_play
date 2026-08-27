@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 from typing import Any, Dict, Optional
@@ -316,6 +317,34 @@ def _strip_fences(code: str) -> str:
         return code.replace("```", "")
 
 
+def _get_test_case_feedback(row: Dict[str, Any], mutation: str) -> str:
+    """Return real test feedback for the test-case-assisted repair mode.
+
+    Prefer feedback materialized in the dataset. Released BugSourceBench eval
+    splits do not currently carry such a column, so fall back to executing the
+    buggy program with the same BigCodeBench evaluator used for final scoring.
+    """
+    for key in ("mutation_info", "test_case_results", "test_results"):
+        value = row.get(key)
+        if value is not None and str(value).strip():
+            return value if isinstance(value, str) else json.dumps(value, default=str)
+
+    if not mutation.strip():
+        raise ValueError("solver-test-cases requires a non-empty buggy program")
+
+    from src.metrics.pass_rate import PassRateMetric
+
+    problem = {
+        "test": row.get("test") or row.get("ground_truth", ""),
+        "entry_point": row.get("entry_point", ""),
+    }
+    passed, details = PassRateMetric(dataset="bigcodebench-instruct")(problem=problem, completion=mutation)
+    if isinstance(details, dict) and details.get("error"):
+        raise RuntimeError(f"failed to generate test-case feedback: {details['error']}")
+
+    return json.dumps({"passed": bool(passed), "details": details}, default=str)
+
+
 def prepare_prompt(
     row: Dict[str, Any],
     mode: str,
@@ -375,8 +404,7 @@ def prepare_prompt(
         numbered = numbered + ("\n" if mutation.endswith("\n") else "") if mutation else ""
         rendered = handler.template.format(prompt=prompt, mutation=numbered)
     elif handler is TEST_CASES:
-        # get test case results from mutation_info column
-        test_cases = row.get("mutation_info", "") or ""
+        test_cases = _get_test_case_feedback(row, mutation)
         rendered = handler.template.format(prompt=prompt, mutation=mutation, test_cases=test_cases)
     elif handler:
         rendered = handler.template.format(example=example_text, prompt=prompt, mutation=mutation)

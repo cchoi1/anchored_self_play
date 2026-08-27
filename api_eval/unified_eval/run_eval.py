@@ -74,14 +74,43 @@ def _load_continue_state(path: str) -> tuple:
     with open(path) as f:
         payload = json.load(f)
     results = payload.get("results", payload if isinstance(payload, list) else [])
+    if not isinstance(results, list):
+        raise ValueError(f"continue file has invalid results payload: {path}")
+
     by_id, incomplete = {}, set()
     for r in results:
-        tid = str(r.get("task_id", ""))
+        tid = _row_task_id(r)
+        if not tid:
+            raise ValueError(f"continue file contains a result without a task ID: {path}")
+        if tid in by_id:
+            raise ValueError(f"continue file contains duplicate task ID {tid!r}: {path}")
         by_id[tid] = r
         raw = (r.get("raw_response") or "").strip()
         if not raw or r.get("error") or (r.get("solution") is None and not raw):
             incomplete.add(tid)
     return by_id, incomplete
+
+
+def _row_task_id(row: Dict) -> str:
+    return str(row.get("task_id") or row.get("uid") or row.get("1", ""))
+
+
+def _require_unique_task_ids(rows: List[Dict], source: str) -> List[str]:
+    task_ids = [_row_task_id(row) for row in rows]
+    missing = [i for i, task_id in enumerate(task_ids) if not task_id]
+    if missing:
+        raise ValueError(f"{source} has rows without task IDs (first index: {missing[0]})")
+    if len(task_ids) != len(set(task_ids)):
+        raise ValueError(f"{source} contains duplicate task IDs")
+    return task_ids
+
+
+def _pending_rows(data: List[Dict], task_ids: List[str], existing: Dict, incomplete: set) -> List[Dict]:
+    """Select rows absent from a checkpoint or explicitly marked incomplete."""
+    return [
+        row for row, task_id in zip(data, task_ids)
+        if task_id not in existing or task_id in incomplete
+    ]
 
 # class VLLMRunner:
 #     def __init__(self, model: str, tp: int = 1, mem: float = 0.5):
@@ -157,28 +186,32 @@ def _eval_one(ctx: Dict, raw: str, args, verdict) -> Dict:
 
 def run_inference(args) -> List[Dict]:
     data = load_data(args.input)
-    
-    existing = {}
-    if args.continue_from and os.path.exists(args.continue_from):
-        existing, incomplete = _load_continue_state(args.continue_from)
-        orig = len(data)
-        
-        get_tid = lambda r: str(r.get("task_id") or r.get("uid") or r.get("1", ""))
-        all_tids = [get_tid(r) for r in data]
-        data = [r for r, tid in zip(data, all_tids) if tid in incomplete]
-        
-        if not data and incomplete:
-            print(f"WARNING: ID mismatch? incomplete={next(iter(incomplete))!r}, input={all_tids[0]!r}")
-        
-        print(f"Continuing: {len(data)}/{orig} tasks need re-run")
-        if not data:
-            print("All complete!")
-            return list(existing.values())
-    
+
     if args.offset:
         data = data[args.offset:]
     if args.limit:
         data = data[:args.limit]
+    expected_ids = _require_unique_task_ids(data, "input dataset")
+
+    existing = {}
+    if args.continue_from and not os.path.exists(args.continue_from):
+        raise FileNotFoundError(f"continue file not found: {args.continue_from}")
+    if args.continue_from:
+        existing, incomplete = _load_continue_state(args.continue_from)
+        orig = len(data)
+        expected_id_set = set(expected_ids)
+        unexpected = set(existing) - expected_id_set
+        if unexpected:
+            raise ValueError(f"continue file contains task IDs outside the requested input slice: {sorted(unexpected)[:3]}")
+
+        # Retry both explicitly incomplete rows and rows that were never saved
+        # (for example, because the first process stopped between checkpoints).
+        data = _pending_rows(data, expected_ids, existing, incomplete)
+
+        print(f"Continuing: {len(data)}/{orig} tasks need re-run")
+        if not data:
+            print("All complete!")
+            return [existing[task_id] for task_id in expected_ids]
     
     evaluate = not args.inference_only
     
@@ -190,7 +223,10 @@ def run_inference(args) -> List[Dict]:
     if existing:
         for r in new:
             existing[str(r["task_id"])] = r
-        results = list(existing.values())
+        missing = [task_id for task_id in expected_ids if task_id not in existing]
+        if missing:
+            raise RuntimeError(f"inference finished without results for {len(missing)} tasks: {missing[:3]}")
+        results = [existing[task_id] for task_id in expected_ids]
         _save(args.output, results, _make_summary(results, args, evaluate, continued_from=args.continue_from))
         if evaluate:
             passed = sum(1 for r in results if (r.get("score") or 0) > 0)
@@ -339,6 +375,8 @@ def _eval_column_row(row: Dict, mode: str, mut_col: str, canon: bool, col: str, 
 
 def run_eval_only(args) -> List[Dict]:
     data = load_data(args.input)
+    if args.offset:
+        data = data[args.offset:]
     if args.limit:
         data = data[:args.limit]
     
@@ -348,7 +386,16 @@ def run_eval_only(args) -> List[Dict]:
         with open(target) as f:
             payload = json.load(f)
         entries = payload.get("results", payload)
-        rows_by_id = {str(r.get("task_id", r.get("1", "unknown"))): r for r in data}
+        expected_ids = _require_unique_task_ids(data, "input dataset")
+        entry_ids = _require_unique_task_ids(entries, "evaluation JSON")
+        missing = set(expected_ids) - set(entry_ids)
+        unexpected = set(entry_ids) - set(expected_ids)
+        if missing or unexpected:
+            raise ValueError(
+                "evaluation JSON does not exactly cover the requested dataset slice: "
+                f"missing={len(missing)}, unexpected={len(unexpected)}"
+            )
+        rows_by_id = {_row_task_id(r): r for r in data}
         
         if args.workers > 1:
             with ThreadPoolExecutor(max_workers=args.workers) as ex:
@@ -363,6 +410,10 @@ def run_eval_only(args) -> List[Dict]:
             results = list(tqdm(it, total=len(entries), desc="eval") if tqdm else it)
     else:
         # Eval from column
+        if not data or target not in data[0]:
+            raise FileNotFoundError(
+                f"--eval must be an existing JSON file or a dataset column; not found: {target!r}"
+            )
         prepend = "instruct" not in args.mode and target in {"canonical_solution", "buggy", "mutation", "response"}
         if args.workers > 1:
             with ThreadPoolExecutor(max_workers=args.workers) as ex:

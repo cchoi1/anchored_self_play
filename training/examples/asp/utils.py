@@ -304,28 +304,40 @@ def check_bug_validity(
     test_results = bug_meta.get("test_results", [])
     has_compile_error = False
 
+    diagnostic_records: List[Dict[str, Any]] = []
     if isinstance(test_results, list):
-        for test in test_results:
-            msg = str(test.get("error_message", "") or "")
-            msg_l = msg.lower()
-            if not msg:
-                continue
+        diagnostic_records.extend(test for test in test_results if isinstance(test, dict))
+    # BigCodeBench also exposes the same diagnostic at the metadata top level.
+    diagnostic_records.append(bug_meta)
 
-            if "error during testing:" in msg_l:
+    for test in diagnostic_records:
+        # Different code runners expose diagnostics under different keys.
+        # In particular, the BigCodeBench runner stores its diagnostic in
+        # `output`, not `error_message`.
+        messages = [
+            str(test.get(key, "") or "")
+            for key in ("error_message", "error", "output", "stderr", "traceback")
+        ]
+        msg_l = "\n".join(message for message in messages if message).lower()
+        if not msg_l:
+            continue
+
+        if "error during testing:" in msg_l:
+            has_compile_error = True
+            break
+
+        if "wrong answer" not in msg_l:
+            compile_patterns = [
+                "syntax", "syntaxerror", "compilation", "compile error",
+                "cannot compile", "indentation", "invalid syntax",
+                "unexpected", "eof", "unterminated", "was never closed",
+                "nameerror", "typeerror", "attributeerror", "import error",
+                "importerror", "modulenotfounderror", "module not found",
+                "indentationerror",
+            ]
+            if any(p in msg_l for p in compile_patterns):
                 has_compile_error = True
                 break
-
-            if "wrong answer" not in msg_l:
-                compile_patterns = [
-                    "syntax", "syntaxerror", "compilation", "compile error",
-                    "cannot compile", "indentation", "invalid syntax",
-                    "unexpected", "eof", "unterminated", "was never closed",
-                    "nameerror", "typeerror", "attributeerror", "import error",
-                    "module not found", "indentationerror",
-                ]
-                if any(p in msg_l for p in compile_patterns):
-                    has_compile_error = True
-                    break
 
     if compile_errors_invalid and has_compile_error:
         bug_valid = False
@@ -340,4 +352,3 @@ def check_bug_validity(
             bug_valid = bug_valid and not has_compile_error
 
     return bug_valid, has_compile_error
-

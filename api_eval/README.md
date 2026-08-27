@@ -103,6 +103,12 @@ failed to generate.
 `solver-solve-then-patch` (repair variants), `differ` (diff-style repair),
 and `bigcodebench-*`.
 
+`solver-test-cases` first runs the buggy program with the benchmark evaluator and
+includes the resulting pass/fail diagnostics in the repair prompt. If a dataset
+already provides `mutation_info`, `test_case_results`, or `test_results`, that
+materialized feedback is used instead. Evaluator failures stop the run rather
+than producing an empty feedback section.
+
 ### Example scripts (`unified_eval/scripts/`)
 
 Reproduce the paper's runs across all models; grouped by role:

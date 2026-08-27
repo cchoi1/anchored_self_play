@@ -57,13 +57,13 @@ for DS in "${!DATASETS[@]}"; do
 
     python -m unified_eval.run_eval --input "$INPUT" --mode "$MODE" --mutation-col "buggy_solution" \
         --model "$MODEL" --output "$OUTPUT" --inference-only --workers "$WORKERS" \
-        --max-new-tokens "$MAX_NEW_TOKENS" || true
+        --max-new-tokens "$MAX_NEW_TOKENS"
 
     # Second pass picks up anything the first pass dropped.
     python -m unified_eval.run_eval --input "$INPUT" --mode "$MODE" --mutation-col "buggy_solution" \
         --model "$MODEL" --output "$OUTPUT" --inference-only --workers "$WORKERS" \
-        --max-new-tokens "$MAX_NEW_TOKENS" --continue-from "$OUTPUT" || true
+        --max-new-tokens "$MAX_NEW_TOKENS" --continue-from "$OUTPUT"
 
     python -m unified_eval.run_eval --input "$INPUT" --mode "$MODE" --mutation-col "buggy_solution" \
-        --model "$MODEL" --eval "$OUTPUT" --output "$EVAL_OUTPUT" --workers "$WORKERS_EVAL" || true
+        --model "$MODEL" --eval "$OUTPUT" --output "$EVAL_OUTPUT" --workers "$WORKERS_EVAL"
 done
